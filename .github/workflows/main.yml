@@ -12,9 +12,10 @@ jobs:
       # 1. 下载官方原版 Frida 17.6.2
       - name: 下载官方源码
         run: |
-          git clone --recurse-submodules https://github.com/frida/frida.git
+          git clone https://github.com/frida/frida.git frida
           cd frida
           git checkout 17.6.2
+          #git submodule update --init --recursive
 
       # 2. 安装依赖
       - name: 安装依赖
