@@ -15,7 +15,7 @@ jobs:
           git clone https://github.com/frida/frida.git frida
           cd frida
           git checkout 17.6.2
-          #git submodule update --init --recursive
+        
 
       # 2. 安装依赖
       - name: 安装依赖
