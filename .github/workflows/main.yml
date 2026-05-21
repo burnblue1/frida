@@ -6,6 +6,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 必须要，否则补丁无法应用
 
       - name: 安装依赖
         run: |
@@ -20,23 +22,25 @@ jobs:
           echo "ANDROID_NDK_ROOT=$GITHUB_WORKSPACE/android-ndk-r25c" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-ndk-r25c" >> $GITHUB_ENV
 
-      - name: 应用 Rusda 补丁
+      - name: 应用 Rusda 官方补丁（正确路径）
         run: |
+          git ls-files
           for p in rusda/17.6.2/patches/deliver/*.patch; do
+            echo "Applying $p..."
             git apply --ignore-whitespace "$p" || true
           done
 
-      - name: 加执行权限
+      - name: 给编译脚本加权限
         run: chmod +x configure
 
-      - name: 配置
+      - name: 官方配置
         run: ./configure --host=android-x86_64
 
-      - name: 编译
+      - name: 官方编译
         run: make -j$(nproc)
 
-      - name: 上传成品
+      - name: 上传最终成品
         uses: actions/upload-artifact@v4
         with:
-          name: frida-server-rusda-17.6.2
+          name: frida-server-rusda-17.6.2-x86_64
           path: build/frida-android-x86_64/bin/frida-server
