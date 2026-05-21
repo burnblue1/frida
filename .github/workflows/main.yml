@@ -1,4 +1,4 @@
-name: Build Rusda Frida 17.6.2
+name: Build Rusda 17.6.2
 on: workflow_dispatch
 
 jobs:
@@ -6,50 +6,52 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # 1. 下载官方原版 Frida 17.6.2
-      - name: 下载官方源码
-        run: |
-          git clone https://github.com/frida/frida.git frida
-          cd frida
-          git checkout 17.6.2
-        
-
-      # 2. 安装依赖
       - name: 安装依赖
         run: |
           sudo apt update
           sudo apt install -y build-essential gcc-multilib g++-multilib git curl wget unzip python3-pip xz-utils libc6-dev-i386
           pip3 install meson==1.3.0 lief tomlkit
 
-      # 3. 安装 NDK r25c
       - name: 安装 NDK r25c
         run: |
           wget -q https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
           unzip -q android-ndk-r25c-linux.zip
           echo "ANDROID_NDK_ROOT=$GITHUB_WORKSPACE/android-ndk-r25c" >> $GITHUB_ENV
 
-      # 4. 进入源码目录 → 打补丁（官方正确方式）
+      - name: 拉取官方 17.6.2 完整源码
+        run: |
+          git clone https://github.com/frida/frida.git frida
+          cd frida
+          git checkout 17.6.2
+          git submodule update --init --recursive
+
+      # ==============================
+      # 【正确打补丁：分目录】
+      # ==============================
       - name: 应用 Rusda 官方补丁
         run: |
           cd frida
-          for p in ../rusda/17.6.2/patches/deliver/*.patch; do
-            echo "Applying $p"
-            git apply --ignore-whitespace "$p" || true
-          done
+          # 1. 根目录补丁
+          git apply ../rusda/17.6.2/patches/deliver/superrepo.patch
 
-      # 5. 运行你提供的官方编译脚本
-      - name: 全架构编译
+          # 2. frida-core 补丁
+          cd subprojects/frida-core
+          git apply ../../../rusda/17.6.2/patches/deliver/frida-core.patch
+          cd ../..
+
+          # 3. frida-gum 补丁
+          cd subprojects/frida-gum
+          git apply ../../../rusda/17.6.2/patches/deliver/frida-gum.patch
+          cd ../..
+
+      - name: 编译
         run: |
           cd frida
-          chmod +x ../rusda/17.6.2/tools/build-android-all.sh
-          bash ../rusda/17.6.2/tools/build-android-all.sh
+          bash ./tools/build-android-all.sh
 
-      # 6. 上传成品
-      - name: 上传所有产物
+      - name: 上传产物
         uses: actions/upload-artifact@v4
         with:
-          name: rusda-frida-17.6.2-all
+          name: rusda-frida-17.6.2
           path: frida/dist-android/
