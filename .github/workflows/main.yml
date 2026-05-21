@@ -10,11 +10,11 @@ jobs:
           fetch-depth: 0
 
       # 自动下载 完整 Frida 17.6.2 官方源码
-      - name: 下载完整 Frida 17.6.2
+      - name: 下载完整 Frida 16.2.1
         run: |
           git clone --recurse-submodules https://github.com/frida/frida.git
           cd frida
-          git checkout 17.6.2
+          git checkout 16.2.1
 
       - name: 安装依赖
         run: |
@@ -33,7 +33,7 @@ jobs:
       - name: 应用 Rusda 补丁
         run: |
           
-          for p in ../rusda/17.6.2/patches/deliver/*.patch; do
+          for p in ../rusda/16.2.1/frida-core/*.patch; do
             git apply --ignore-whitespace "$p" || true
           done
 
