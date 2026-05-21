@@ -9,10 +9,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 安装完整官方编译环境
+      # 自动下载 完整 Frida 17.6.2 官方源码
+      - name: 下载完整 Frida 17.6.2
+        run: |
+          git clone --recurse-submodules https://github.com/frida/frida.git
+          cd frida
+          git checkout 17.6.2
+
+      - name: 安装依赖
         run: |
           sudo apt update
-          sudo apt install -y build-essential gcc gcc-multilib g++-multilib git curl wget unzip python3-pip libc6-dev-i386
+          sudo apt install -y build-essential gcc-multilib g++-multilib git curl wget unzip python3-pip libc6-dev-i386
           pip3 install meson==1.3.0 lief tomlkit
 
       - name: 安装 NDK r25c
@@ -22,27 +29,23 @@ jobs:
           echo "ANDROID_NDK_ROOT=$GITHUB_WORKSPACE/android-ndk-r25c" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-ndk-r25c" >> $GITHUB_ENV
 
-      - name: 初始化子模块（必须！解决 meson.py 缺失）
-        run: |
-          git submodule update --init --recursive
-
+      # 自动进入完整源码目录，打补丁
       - name: 应用 Rusda 补丁
         run: |
-          for p in rusda/17.6.2/patches/deliver/*.patch; do
+          cd frida
+          for p in ../rusda/17.6.2/patches/deliver/*.patch; do
             git apply --ignore-whitespace "$p" || true
           done
 
-      - name: 添加执行权限
-        run: chmod +x configure
-
-      - name: 官方配置
-        run: ./configure --host=android-x86_64
-
-      - name: 官方编译
-        run: make -j$(nproc)
+      - name: 配置 & 编译
+        run: |
+          cd frida
+          chmod +x configure
+          ./configure --host=android-x86_64
+          make -j$(nproc)
 
       - name: 上传成品
         uses: actions/upload-artifact@v4
         with:
           name: frida-server-rusda-17.6.2-x86_64
-          path: build/frida-android-x86_64/bin/frida-server
+          path: frida/build/frida-android-x86_64/bin/frida-server
