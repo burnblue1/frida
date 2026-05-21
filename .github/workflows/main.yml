@@ -22,9 +22,12 @@ jobs:
 
       - name: 应用 Rusda 补丁
         run: |
-          for p in ../rusda/17.6.2/patches/deliver/*.patch; do
+          for p in rusda/17.6.2/patches/deliver/*.patch; do
             git apply --ignore-whitespace "$p" || true
           done
+
+      - name: 加执行权限
+        run: chmod +x configure
 
       - name: 配置
         run: ./configure --host=android-x86_64
@@ -36,4 +39,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frida-server-rusda-17.6.2
-          path: frida/build/frida-android-x86_64/bin/frida-server
+          path: build/frida-android-x86_64/bin/frida-server
