@@ -32,7 +32,7 @@ jobs:
       # 自动进入完整源码目录，打补丁
       - name: 应用 Rusda 补丁
         run: |
-          
+          cd frida
           for p in ../rusda/16.2.1/frida-core/*.patch; do
             git apply --ignore-whitespace "$p" || true
           done
