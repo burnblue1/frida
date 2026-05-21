@@ -9,10 +9,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 安装官方依赖
+      - name: 安装完整官方编译环境
         run: |
           sudo apt update
-          sudo apt install -y build-essential git curl wget unzip python3-pip libc6-dev-i386
+          sudo apt install -y build-essential gcc gcc-multilib g++-multilib git curl wget unzip python3-pip libc6-dev-i386
           pip3 install meson==1.3.0 lief tomlkit
 
       - name: 安装 NDK r25c
@@ -22,13 +22,17 @@ jobs:
           echo "ANDROID_NDK_ROOT=$GITHUB_WORKSPACE/android-ndk-r25c" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-ndk-r25c" >> $GITHUB_ENV
 
+      - name: 初始化子模块（必须！解决 meson.py 缺失）
+        run: |
+          git submodule update --init --recursive
+
       - name: 应用 Rusda 补丁
         run: |
           for p in rusda/17.6.2/patches/deliver/*.patch; do
             git apply --ignore-whitespace "$p" || true
           done
 
-      - name: 加执行权限
+      - name: 添加执行权限
         run: chmod +x configure
 
       - name: 官方配置
