@@ -1,0 +1,42 @@
+name: Build Rusda Frida 17.6.2
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装依赖
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential git curl wget unzip python3-pip libc6-dev-i386
+          pip3 install meson lief
+
+      # 【官方要求】Frida 17.6.2 只支持 NDK r25c
+      - name: 安装 NDK r25c
+        run: |
+          wget -q https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
+          unzip -q android-ndk-r25c-linux.zip
+          echo "ANDROID_NDK_ROOT=$GITHUB_WORKSPACE/android-ndk-r25c" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-ndk-r25c" >> $GITHUB_ENV
+
+      - name: 应用 Rusda 补丁
+        run: |
+         
+          for p in ../rusda/17.6.2/patches/deliver/*.patch; do
+            git apply --ignore-whitespace "$p" || true
+          done
+
+      # 官方原生命令
+      - name: 配置
+        run:./configure --host=android-x86_64
+
+      - name: 编译
+        run: make -j$(nproc)
+
+      - name: 上传成品
+        uses: actions/upload-artifact@v4
+        with:
+          name: frida-server-rusda-17.6.2
+          path: frida/build/frida-android-x86_64/bin/frida-server
