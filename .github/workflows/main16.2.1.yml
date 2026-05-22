@@ -21,30 +21,37 @@ jobs:
 
       - name: 拉取官方 16.2.1 完整源码
         run: |
-          git clone --recurse-submodules -b 16.2.1 https://github.com/frida/frida frida16.2.1
+          git clone --recurse-submodules https://github.com/frida/frida frida16.2.1
+          cd frida16.2.1
+          git checkout 16.2.1
+          git submodule update --init --recursive --force
 
       - name: 应用 Rusda 官方补丁
         run: |
           cd frida16.2.1
-
-          # 正确！直接根目录的 frida-core、frida-gum！
           for f in ../rusda/16.2.1/frida-core/*; do
             patch -d frida-core -p1 < "$f" || true
           done
-
           for f in ../rusda/16.2.1/frida-gum/*; do
             patch -d frida-gum -p1 < "$f" || true
           done
 
-      - name: Build frida-server         
-        run: |           
-          make core-android-x86_64 
-      - name: Copy binary         
-        run: |          
-          cp build/frida-android-x86_64/bin/frida-server ./frida-server-x86_64 
-      - name: Upload artifact         
-        uses: actions/upload-artifact@v4         
-        with:          
-         name: frida-server-florida-16.1.10-x86_64          
-         path: frida-server-x86_64           
-         if-no-files-found: error
+      # ✅ 编译（你要的 x86_64）
+      - name: Build frida-server
+        run: |
+          cd frida16.2.1
+          make core-android-x86_64
+
+      # ✅ 复制文件
+      - name: Copy binary
+        run: |
+          cd frida16.2.1
+          cp build/frida-android-x86_64/bin/frida-server ../frida-server-x86_64
+
+      # ✅ 上传（找不到文件直接报错）
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frida-server-florida-16.1.10-x86_64
+          path: frida-server-x86_64
+          if-no-files-found: error
