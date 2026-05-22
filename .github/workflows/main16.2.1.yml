@@ -29,13 +29,17 @@ jobs:
       - name: 应用 Rusda 官方补丁
         run: |
           cd frida16.2.1
-          for f in ../rusda/16.2.1/frida-core/*; do
+          for f in ../rusda/16.2.1/frida-core/*.patch; do
             patch -d frida-core -p1 < "$f" || true
           done
           for f in ../rusda/16.2.1/frida-gum/*; do
             patch -d frida-gum -p1 < "$f" || true
           done
-
+      # ✅ 在这里加运行修复脚本
+      - name: 运行 topatch.py 修复
+        run: |
+          cd frida16.2.1
+          python3 ../rusda/16.2.1/frida-core/src/topatch.py
       # ✅ 编译（你要的 x86_64）
       - name: Build frida-server
         run: |
