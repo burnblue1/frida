@@ -21,10 +21,12 @@ jobs:
 
       - name: 拉取官方 17.6.2 完整源码
         run: |
-          git clone https://github.com/frida/frida.git frida
+          #git clone https://github.com/frida/frida.git frida
+          #cd frida
+          #git checkout 17.6.2
+          #git submodule update --init --recursive
+          git clone --recurse-submodules -b 17.6.2 https://github.com/frida/frida frida17.6.2
           cd frida
-          git checkout 17.6.2
-          git submodule update --init --recursive
 
       # ==============================
       # 【正确打补丁：分目录】
