@@ -23,6 +23,14 @@ jobs:
         run: |
           git clone --recurse-submodules -b 16.2.1 https://github.com/frida/frida frida16.2.1
 
+      # ====================
+      # 【强制修复：生成 subprojects】
+      # ====================
+      - name: 强制同步子模块
+        run: |
+          cd frida16.2.1
+          git submodule update --init --recursive
+
       - name: 应用 Rusda 官方补丁
         run: |
           cd frida16.2.1
