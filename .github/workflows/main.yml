@@ -26,14 +26,14 @@ jobs:
           #git checkout 17.6.2
           #git submodule update --init --recursive
           git clone --recurse-submodules -b 17.6.2 https://github.com/frida/frida frida17.6.2
-          cd frida
+          cd frida17.6.2
 
       # ==============================
       # 【正确打补丁：分目录】
       # ==============================
       - name: 应用 Rusda 官方补丁
         run: |
-          cd frida
+          cd frida17.6.2
           # 1. 根目录补丁
           git apply ../rusda/17.6.2/patches/deliver/superrepo.patch
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: 编译
         run: |
-          cd frida
+          cd frida17.6.2
           bash ./tools/build-android-all.sh
 
       - name: 上传产物
