@@ -36,13 +36,15 @@ jobs:
             patch -d frida-gum -p1 < "$f" || true
           done
 
-      - name: 编译
-        run: |
-          cd frida16.2.1
-          bash ../rusda/17.6.2/tools/build-android-all.sh
-
-      - name: 上传产物
-        uses: actions/upload-artifact@v4
-        with:
-          name: rusda-frida-16.2.1
-          path: frida16.2.1/dist-android/
+      - name: Build frida-server         
+        run: |           
+          make core-android-x86_64 
+      - name: Copy binary         
+        run: |          
+          cp build/frida-android-x86_64/bin/frida-server ./frida-server-x86_64 
+      - name: Upload artifact         
+        uses: actions/upload-artifact@v4         
+        with:          
+         name: frida-server-florida-16.1.10-x86_64          
+         path: frida-server-x86_64           
+         if-no-files-found: error
