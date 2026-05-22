@@ -1,52 +1,71 @@
 diff --git a/src/linux/linux-host-session.vala b/src/linux/linux-host-session.vala
-index 732d4daa..d62e8f5c 100644
+index 732d4daa..8c9f5e7b 100644
 --- a/src/linux/linux-host-session.vala
 +++ b/src/linux/linux-host-session.vala
-@@ -277,9 +277,48 @@ namespace Frida {
-             });
-         }
- 
--        const int ZYGOTE_WAIT_TIMEOUT = 3000;
-+        // 修复1：增加 zygote 等待超时，从 3 秒增加到 10 秒，避免因运行时解码开销导致超时
-+        const int ZYGOTE_WAIT_TIMEOUT = 10000;
- 
-         private void perform_spawn_on_zygote (string program, HostSpawnOptions? options,
-                 Cancellable? cancellable, GAsyncReadyCallback callback, void * user_data) {
-             var async_result = new Task<HostSpawnResult>.new (callback, user_data);
- 
-+            // 修复2：在 spawn 之前杀死所有残留的 USAP 进程（Android 10+）
-+            // 这是为了解决 Frida 在等待 USAP 进程信号时无限等待的问题（官方 issue #2516）
-+            try {
-+                // 使用 shell 命令 pkill 快速杀死所有 usap 进程
-+                string[] argv = {"sh", "-c", "pkill -f usap 2>/dev/null"};
-+                string? output;
-+                string? error;
-+                int status;
-+                Process.spawn_sync (null, argv, null, SpawnFlags.SEARCH_PATH, null,
-+                                    out output, out error, out status);
-+                if (status == 0)
-+                    debug ("rusda: Successfully killed USAP processes");
-+                else
-+                    debug ("rusda: No USAP processes found or pkill failed");
-+            } catch (Error e) {
-+                debug ("rusda: Failed to kill USAP processes: %s", e.message);
-+            }
+@@ -265,25 +265,49 @@ namespace Frida {
+                     return;
+                 });
+             }
+-
+-            const int ZYGOTE_WAIT_TIMEOUT = 3000;
 +
-+            // 等待系统清理完成，避免旧 USAP 进程干扰
-+            uint timeout_ms = 1000;
-+            var timeout_source = new TimeoutSource (timeout_ms);
-+            timeout_source.set_callback (() => {
-+                if (async_result.completed)
-+                    return false;
-+                // 简单延迟，不实际取消 async_result，只是等待
-+                return false;
-+            });
-+            timeout_source.attach (MainContext.get_thread_default ());
-+            // 注意：不能直接 yield，因为本函数不是 async？实际上 perform_spawn_on_zygote 是 async 的，但签名没有 async？
-+            // 检查签名：perform_spawn_on_zygote 本身是 private void，不是 async。
-+            // 所以我们不能用 yield。改用简单的 Posix.sleep(1)
-+            Posix.sleep (1);
++            /**
++             * 修复1：增加 zygote 等待超时从 3 秒到 10 秒
++             * 解决 rusda 运行时解码导致的额外延迟引起的 spawn 超时
++             */
++            const int ZYGOTE_WAIT_TIMEOUT = 10000;
+ 
+             private void perform_spawn_on_zygote (string program, HostSpawnOptions? options,
+                     Cancellable? cancellable, GAsyncReadyCallback callback, void * user_data) {
+                 var async_result = new Task<HostSpawnResult>.new (callback, user_data);
+ 
++                /**
++                 * 修复2：在 spawn 前杀死所有残留的 USAP 进程
++                 * 解决 Frida 在等待 USAP 进程信号时无限超时的问题
++                 * 参考：https://github.com/frida/frida/issues/2516
++                 */
++                try {
++                    string[] argv = {"sh", "-c", "pkill -f usap 2>/dev/null"};
++                    string? output, error;
++                    int status;
++                    Process.spawn_sync (null, argv, null, SpawnFlags.SEARCH_PATH, null,
++                                        out output, out error, out status);
++                    if (status == 0) {
++                        debug ("rusda: Successfully killed USAP processes");
++                    } else {
++                        debug ("rusda: No USAP processes found to kill");
++                    }
++                } catch (Error e) {
++                    debug ("rusda: Failed to kill USAP processes: %s", e.message);
++                }
++                // 短暂延迟，确保系统完成清理
++                Thread.usleep (1000000);  // 1 秒
 +
-             // 1) Start the activity to spawn the main thread
-             var options_builder = new SpawnOptionsBuilder ();
-             if (options != null) {
+                 // 1) Start the activity to spawn the main thread
+                 var options_builder = new SpawnOptionsBuilder ();
+                 if (options != null) {
+                     if (options.argv != null)
+                         options_builder.set_argv (options.argv);
+                     if (options.environment != null)
+                         options_builder.set_environment (options.environment);
+                 }
+
+                 var request = new SpawnRequest ();
+
+                 try {
+                     yield perform_system_server_spawn (program, options_builder, cancellable, request);
+@@ -292,20 +316,20 @@ namespace Frida {
+                         return;
+                     }
+
+-                    var spawn_result = yield try_spawn_from_zygote (request.pid, program, options_builder,
++                    var spawn_result = yield try_spawn_from_zygote (request.pid, program, options_builder,
+                         cancellable);
+                     if (spawn_result != null) {
+                         async_result.complete (spawn_result);
+                         return;
+                     }
+                 }
+
+                 throw new Error.NOT_SUPPORTED ("Unable to spawn %s: unexpected error", program);
+             }
