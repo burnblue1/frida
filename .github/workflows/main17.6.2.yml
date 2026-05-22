@@ -46,10 +46,7 @@ jobs:
           cd subprojects/frida-gum
           git apply ../../../rusda/17.6.2/patches/deliver/frida-gum.patch
           cd ../..
-          # 3. frida-outtime 补丁
-          cd subprojects/frida-core
-          git apply ../../../rusda/17.6.2/patches/deliver/rusda_fix_timeout.patch
-          cd ../..
+
       - name: 编译
         run: |
           cd frida17.6.2
