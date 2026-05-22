@@ -38,12 +38,12 @@ jobs:
            
           # 2. frida-core 补丁
           cd subprojects/frida-core
-          for f in../rusda/16.2.1/frida-core/*; do patch -p1 < "$f" || true; done 
+          for f in ../rusda/16.2.1/frida-core/*; do patch -p1 < "$f" || true; done 
           cd ../..
 
           # 3. frida-gum 补丁
           cd subprojects/frida-gum
-          for f in../rusda/16.2.1/frida-gum/*; do patch -p1 < "$f" || true; done 
+          for f in ../rusda/16.2.1/frida-gum/*; do patch -p1 < "$f" || true; done 
           cd ../..
 
       - name: 编译
