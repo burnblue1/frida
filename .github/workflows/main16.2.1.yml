@@ -19,31 +19,30 @@ jobs:
           unzip -q android-ndk-r25c-linux.zip
           echo "ANDROID_NDK_ROOT=$GITHUB_WORKSPACE/android-ndk-r25c" >> $GITHUB_ENV
 
-      - name: 拉取官方 17.6.2 完整源码
+      - name: 拉取官方 16.2.1 完整源码
         run: |
-          #git clone https://github.com/frida/frida.git frida
-          #cd frida
-          #git checkout 16.2.1
-          #git submodule update --init --recursive
-          git clone --recurse-submodules -b 17.6.2 https://github.com/frida/frida frida16.2.1
+          git clone --recurse-submodules -b 16.2.1 https://github.com/frida/frida frida16.2.1
           cd frida16.2.1
 
       # ==============================
-      # 【正确打补丁：分目录】
+      # 【正确补丁路径】
       # ==============================
       - name: 应用 Rusda 官方补丁
         run: |
           cd frida16.2.1
-         
-           
-          # 2. frida-core 补丁
+
+          # frida-core 补丁
           cd subprojects/frida-core
-          for f in ../rusda/16.2.1/frida-core/*; do patch -p1 < "$f" || true; done 
+          for f in ../../../rusda/16.2.1/frida-core/*; do
+            patch -p1 < "$f" || true
+          done
           cd ../..
 
-          # 3. frida-gum 补丁
+          # frida-gum 补丁
           cd subprojects/frida-gum
-          for f in ../rusda/16.2.1/frida-gum/*; do patch -p1 < "$f" || true; done 
+          for f in ../../../rusda/16.2.1/frida-gum/*; do
+            patch -p1 < "$f" || true
+          done
           cd ../..
 
       - name: 编译
