@@ -35,17 +35,16 @@ jobs:
           for f in ../rusda/16.2.1/frida-gum/*; do
             patch -d frida-gum -p1 < "$f" || true
           done
-      # ✅ 在这里加运行修复脚本
-      - name: 运行 topatch.py 修复
-        run: |
-          cd frida16.2.1
-          python3 ../rusda/16.2.1/frida-core/src/topatch.py
+
       # ✅ 编译（你要的 x86_64）
       - name: Build frida-server
         run: |
           cd frida16.2.1
           make core-android-x86_64
-
+      - name: 运行topatch二进制修补
+        run: |
+          cd frida16.2.1
+          python3 ../rusda/16.2.1/frida-core/src/topatch.py build/frida-android-x86_64/bin/frida-server
       # ✅ 复制文件
       - name: Copy binary
         run: |
