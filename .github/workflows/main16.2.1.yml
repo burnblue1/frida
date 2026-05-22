@@ -24,26 +24,17 @@ jobs:
           git clone --recurse-submodules -b 16.2.1 https://github.com/frida/frida frida16.2.1
           cd frida16.2.1
 
-      # ==============================
-      # 【正确补丁路径】
-      # ==============================
       - name: 应用 Rusda 官方补丁
         run: |
           cd frida16.2.1
-
-          # frida-core 补丁
-          cd subprojects/frida-core
-          for f in ../../../rusda/16.2.1/frida-core/*; do
-            patch -p1 < "$f" || true
+          # 打入目录：subprojects/frida-core（完全正确）
+          for f in ../rusda/16.2.1/frida-core/*; do
+            patch -d subprojects/frida-core -p1 < "$f" || true
           done
-          cd ../..
-
-          # frida-gum 补丁
-          cd subprojects/frida-gum
-          for f in ../../../rusda/16.2.1/frida-gum/*; do
-            patch -p1 < "$f" || true
+      
+          for f in ../rusda/16.2.1/frida-gum/*; do
+            patch -d subprojects/frida-gum -p1 < "$f" || true
           done
-          cd ../..
 
       - name: 编译
         run: |
