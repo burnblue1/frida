@@ -56,4 +56,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rusda-frida-17.6.2
-          path: frida/dist-android/
+          path: frida17.6.2/dist-android/
